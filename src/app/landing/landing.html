@@ -1,0 +1,104 @@
+<div class="min-h-screen bg-surface text-ink">
+  <header class="border-b border-border bg-surface-raised">
+    <div class="mx-auto flex max-w-[1120px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <span class="font-display text-2xl font-semibold text-aegean-deep">Σπίτι μου 3</span>
+      <span class="text-sm text-ink-muted">Ανεπίσημος οδηγός</span>
+    </div>
+  </header>
+
+  <main class="mx-auto flex max-w-[1120px] flex-col gap-12 px-4 py-8 sm:px-6 sm:py-12">
+    <section class="flex max-w-3xl flex-col gap-6" aria-labelledby="hero-title">
+      <h1
+        id="hero-title"
+        class="font-display text-[32px] leading-10 font-semibold tracking-tight text-aegean-deep sm:text-[44px] sm:leading-[50px]"
+      >
+        Ελέγξτε αν φαίνεστε κατάλληλοι για το Σπίτι μου 3
+      </h1>
+      <p class="text-lg text-ink-muted">
+        Απαντήστε σε λίγες ερωτήσεις και δείτε ποια κριτήρια πληροίτε, καθώς και πόσο βέβαιο
+        είναι κάθε αποτέλεσμα.
+      </p>
+      <app-notice kind="warning">
+        <p class="font-semibold">
+          Το πρόγραμμα έχει ανακοινωθεί αλλά δεν έχει ξεκινήσει. Οι όροι είναι προκαταρκτικοί.
+        </p>
+        <p class="text-xs">Οι όροι ελέγχθηκαν τελευταία στις {{ lastVerified }}.</p>
+      </app-notice>
+      <div>
+        <a
+          routerLink="/elegxos"
+          class="bg-aegean text-on-aegean hover:bg-aegean-deep focus-visible:outline-aegean inline-flex items-center justify-center rounded-md px-5 py-3 text-base font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          >Έλεγχος επιλεξιμότητας</a
+        >
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-6" aria-labelledby="how-title">
+      <h2 id="how-title" class="font-display text-[32px] leading-10 font-semibold">
+        Πώς λειτουργεί
+      </h2>
+      <ol class="grid gap-4 md:grid-cols-3">
+        @for (step of steps; track step.title; let i = $index) {
+          <li class="bg-surface-raised border-border flex flex-col gap-2 rounded-lg border p-6 shadow-sm">
+            <span class="text-ink-muted text-sm font-semibold">Βήμα {{ i + 1 }}</span>
+            <h3 class="font-display text-2xl font-semibold">{{ step.title }}</h3>
+            <p>{{ step.text }}</p>
+          </li>
+        }
+      </ol>
+    </section>
+
+    <section class="flex flex-col gap-6" aria-labelledby="figures-title">
+      <div class="flex max-w-3xl flex-col gap-2">
+        <h2 id="figures-title" class="font-display text-[32px] leading-10 font-semibold">
+          Όσα έχουν ανακοινωθεί μέχρι σήμερα
+        </h2>
+        <p class="text-ink-muted">
+          Τα στοιχεία προέρχονται από δημοσιεύματα και δεν έχουν ακόμη επιβεβαιωθεί με
+          υπουργική απόφαση (ΚΥΑ).
+        </p>
+      </div>
+      <ul class="bg-surface-raised border-border divide-border divide-y rounded-lg border shadow-sm">
+        @for (figure of figures; track figure.id) {
+          <li class="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-6">
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-semibold">{{ figure.label }}</span>
+              <span class="text-lg font-semibold tabular-nums">{{ figure.value }}</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <app-status-badge [status]="figure.status" />
+              <a
+                class="text-aegean focus-visible:outline-aegean text-sm underline focus-visible:outline-2 focus-visible:outline-offset-2"
+                [href]="figure.source.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Πηγή: {{ figure.source.label }}</a
+              >
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="flex max-w-3xl flex-col gap-3" aria-labelledby="privacy-title">
+      <h2 id="privacy-title" class="font-display text-[32px] leading-10 font-semibold">
+        Τα στοιχεία σας δεν φεύγουν από τη συσκευή σας
+      </h2>
+      <p>
+        Ο έλεγχος γίνεται μέσα στο πρόγραμμα περιήγησής σας. Δεν υπάρχει λογαριασμός, δεν
+        αποθηκεύουμε τις απαντήσεις σας και δεν φορτώνουμε εξωτερικές υπηρεσίες.
+      </p>
+    </section>
+  </main>
+
+  <footer class="border-border bg-surface-sunken border-t">
+    <div class="mx-auto flex max-w-[1120px] flex-col gap-2 px-4 py-8 text-sm sm:px-6">
+      <p>
+        Το εργαλείο είναι ανεπίσημο και ενημερωτικό. Δεν ανήκει στην Πολιτεία ή σε τράπεζα και
+        δεν αποτελεί δέσμευση ή εγγύηση έγκρισης. Τη δεσμευτική απόφαση λαμβάνουν η τράπεζα και
+        η επίσημη πλατφόρμα του προγράμματος.
+      </p>
+      <p class="text-xs">Τελευταία ενημέρωση όρων: {{ lastVerified }}.</p>
+    </div>
+  </footer>
+</div>

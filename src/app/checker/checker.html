@@ -1,0 +1,384 @@
+<div class="min-h-screen bg-surface text-ink">
+  <header class="border-b border-border bg-surface-raised">
+    <div class="mx-auto flex max-w-[1120px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <a
+        routerLink="/"
+        class="font-display text-2xl font-semibold text-aegean-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aegean"
+        >Σπίτι μου 3</a
+      >
+      <span class="text-sm text-ink-muted">Ανεπίσημος οδηγός</span>
+    </div>
+  </header>
+
+  <main class="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-12">
+    <div class="flex flex-col gap-4">
+      <h1
+        class="font-display text-[32px] leading-10 font-semibold tracking-tight text-aegean-deep sm:text-[44px] sm:leading-[50px]"
+      >
+        Έλεγχος επιλεξιμότητας
+      </h1>
+      <p class="text-lg text-ink-muted">
+        Απαντήστε στις ερωτήσεις και δείτε ποια κριτήρια πληροίτε. Οι απαντήσεις σας δεν
+        αποθηκεύονται και δεν φεύγουν από τη συσκευή σας.
+      </p>
+      <app-notice kind="warning">
+        <p class="font-semibold">
+          Το πρόγραμμα δεν έχει ξεκινήσει. Ο έλεγχος βασίζεται σε προκαταρκτικούς όρους.
+        </p>
+        <p class="text-xs">Οι όροι ελέγχθηκαν τελευταία στις {{ lastVerified }}.</p>
+      </app-notice>
+    </div>
+
+    <form class="flex flex-col gap-8" novalidate (submit)="submit($event)">
+      <!-- Household -->
+      <section class="bg-surface-raised border-border flex flex-col gap-6 rounded-lg border p-6 shadow-sm">
+        <h2 class="font-display text-2xl font-semibold">Νοικοκυριό</h2>
+
+        <fieldset id="householdType" tabindex="-1" class="flex flex-col gap-3">
+          <legend class="text-sm font-semibold">Οικογενειακή κατάσταση</legend>
+          @for (opt of householdOptions; track opt.value) {
+            <label
+              class="border-border-strong bg-surface-raised has-[:checked]:border-aegean has-[:checked]:bg-surface-tint flex cursor-pointer items-start gap-3 rounded-md border p-4"
+            >
+              <input
+                type="radio"
+                name="householdType"
+                class="accent-aegean mt-1 h-4 w-4"
+                [value]="opt.value"
+                [checked]="householdType() === opt.value"
+                (change)="set('householdType', opt.value)"
+              />
+              <span>{{ opt.label }}</span>
+            </label>
+          }
+          @if (errors()['householdType']; as error) {
+            <p data-testid="field-error" class="text-terracotta text-sm">{{ error }}</p>
+          }
+        </fieldset>
+
+        @if (householdType()) {
+          <div class="grid gap-6 sm:grid-cols-2">
+            <app-field
+              controlId="ageA"
+              [label]="householdType() === 'couple' ? 'Ηλικία πρώτου αιτούντος' : 'Ηλικία αιτούντος'"
+              hint="Η ηλικία υπολογίζεται στις 31 Δεκεμβρίου του έτους της αίτησης."
+              [error]="errors()['ageA']"
+            >
+              <input
+                id="ageA"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                [class]="inputClass('ageA')"
+                [value]="form().ageA"
+                [attr.aria-invalid]="errors()['ageA'] ? 'true' : null"
+                [attr.aria-describedby]="describedBy('ageA', true)"
+                (input)="set('ageA', value($event))"
+              />
+            </app-field>
+
+            @if (householdType() === 'couple') {
+              <app-field
+                controlId="ageB"
+                label="Ηλικία δεύτερου αιτούντος"
+                hint="Στις 31 Δεκεμβρίου του έτους της αίτησης."
+                [error]="errors()['ageB']"
+              >
+                <input
+                  id="ageB"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  [class]="inputClass('ageB')"
+                  [value]="form().ageB"
+                  [attr.aria-invalid]="errors()['ageB'] ? 'true' : null"
+                  [attr.aria-describedby]="describedBy('ageB', true)"
+                  (input)="set('ageB', value($event))"
+                />
+              </app-field>
+            }
+
+            @if (householdType() !== 'single') {
+              <app-field
+                controlId="children"
+                label="Αριθμός παιδιών"
+                [hint]="householdType() === 'couple' ? 'Γράψτε 0 αν δεν υπάρχουν.' : 'Τουλάχιστον ένα.'"
+                [error]="errors()['children']"
+              >
+                <input
+                  id="children"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  [class]="inputClass('children')"
+                  [value]="form().children"
+                  [attr.aria-invalid]="errors()['children'] ? 'true' : null"
+                  [attr.aria-describedby]="describedBy('children', true)"
+                  (input)="set('children', value($event))"
+                />
+              </app-field>
+            }
+          </div>
+        }
+
+        <app-field
+          controlId="income"
+          label="Ετήσιο οικογενειακό εισόδημα (€)"
+          hint="Συμπληρώστε το συνολικό ετήσιο οικογενειακό εισόδημα όπως εμφανίζεται στο εκκαθαριστικό σημείωμα."
+          [error]="errors()['income']"
+        >
+          <input
+            id="income"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            [class]="inputClass('income')"
+            [value]="form().income"
+            [attr.aria-invalid]="errors()['income'] ? 'true' : null"
+            [attr.aria-describedby]="describedBy('income', true)"
+            (input)="set('income', value($event))"
+          />
+        </app-field>
+
+        <fieldset id="residency" tabindex="-1" class="flex flex-col gap-3">
+          <legend class="text-sm font-semibold">Ιθαγένεια</legend>
+          @for (opt of residencyOptions; track opt.value) {
+            <label
+              class="border-border-strong bg-surface-raised has-[:checked]:border-aegean has-[:checked]:bg-surface-tint flex cursor-pointer items-start gap-3 rounded-md border p-4"
+            >
+              <input
+                type="radio"
+                name="residency"
+                class="accent-aegean mt-1 h-4 w-4"
+                [value]="opt.value"
+                [checked]="form().residency === opt.value"
+                (change)="set('residency', opt.value)"
+              />
+              <span>{{ opt.label }}</span>
+            </label>
+          }
+          @if (errors()['residency']; as error) {
+            <p data-testid="field-error" class="text-terracotta text-sm">{{ error }}</p>
+          }
+        </fieldset>
+      </section>
+
+      <!-- Property -->
+      <section class="bg-surface-raised border-border flex flex-col gap-6 rounded-lg border p-6 shadow-sm">
+        <h2 class="font-display text-2xl font-semibold">Ακίνητο</h2>
+        <div class="grid gap-6 sm:grid-cols-2">
+          <app-field
+            controlId="propertyValue"
+            label="Συμβατική αξία ακινήτου (€)"
+            hint="Η τιμή αγοράς που αναγράφεται στο συμβόλαιο."
+            [error]="errors()['propertyValue']"
+          >
+            <input
+              id="propertyValue"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              [class]="inputClass('propertyValue')"
+              [value]="form().propertyValue"
+              [attr.aria-invalid]="errors()['propertyValue'] ? 'true' : null"
+              [attr.aria-describedby]="describedBy('propertyValue', true)"
+              (input)="set('propertyValue', value($event))"
+            />
+          </app-field>
+
+          <app-field
+            controlId="area"
+            label="Εμβαδόν ακινήτου (τ.μ.)"
+            hint="Χωρίς βοηθητικούς χώρους."
+            [error]="errors()['area']"
+          >
+            <input
+              id="area"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              [class]="inputClass('area')"
+              [value]="form().area"
+              [attr.aria-invalid]="errors()['area'] ? 'true' : null"
+              [attr.aria-describedby]="describedBy('area', true)"
+              (input)="set('area', value($event))"
+            />
+          </app-field>
+
+          <app-field controlId="buildingYear" label="Έτος κατασκευής" [error]="errors()['buildingYear']">
+            <input
+              id="buildingYear"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              [class]="inputClass('buildingYear')"
+              [value]="form().buildingYear"
+              [attr.aria-invalid]="errors()['buildingYear'] ? 'true' : null"
+              [attr.aria-describedby]="describedBy('buildingYear', false)"
+              (input)="set('buildingYear', value($event))"
+            />
+          </app-field>
+        </div>
+
+        <fieldset id="ownsSuitableHome" tabindex="-1" class="flex flex-col gap-3">
+          <legend class="text-sm font-semibold">
+            Έχετε ήδη ακίνητο κατάλληλο για κύρια κατοικία;
+          </legend>
+          <p class="text-ink-muted text-sm">Δηλώνεται από εσάς και δεν ελέγχεται.</p>
+          @for (opt of yesNoOptions; track opt.value) {
+            <label
+              class="border-border-strong bg-surface-raised has-[:checked]:border-aegean has-[:checked]:bg-surface-tint flex cursor-pointer items-start gap-3 rounded-md border p-4"
+            >
+              <input
+                type="radio"
+                name="ownsSuitableHome"
+                class="accent-aegean mt-1 h-4 w-4"
+                [value]="opt.value"
+                [checked]="form().ownsSuitableHome === opt.value"
+                (change)="set('ownsSuitableHome', opt.value)"
+              />
+              <span>{{ opt.label }}</span>
+            </label>
+          }
+          @if (errors()['ownsSuitableHome']; as error) {
+            <p data-testid="field-error" class="text-terracotta text-sm">{{ error }}</p>
+          }
+        </fieldset>
+      </section>
+
+      <div class="flex flex-wrap items-center gap-4">
+        <button
+          type="submit"
+          class="bg-aegean text-on-aegean hover:bg-aegean-deep focus-visible:outline-aegean inline-flex items-center justify-center rounded-md px-5 py-3 text-base font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          Έλεγχος επιλεξιμότητας
+        </button>
+        <button
+          type="button"
+          class="bg-surface-raised text-aegean-deep border-aegean hover:bg-surface-tint focus-visible:outline-aegean inline-flex items-center justify-center rounded-md border px-5 py-3 text-base font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          (click)="reset()"
+        >
+          Επαναφορά
+        </button>
+      </div>
+    </form>
+
+    @if (result(); as r) {
+      <section
+        data-testid="result"
+        class="flex flex-col gap-6"
+        aria-labelledby="result-title"
+        aria-live="polite"
+      >
+        <!-- Verdict -->
+        @if (r.verdict.kind === 'not-eligible') {
+          <div class="bg-terracotta-mist text-terracotta border-terracotta flex gap-3 rounded-md border p-4">
+            <svg class="mt-1 h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" />
+            </svg>
+            <div class="flex flex-col gap-1">
+              <h2 id="result-title" tabindex="-1" class="font-display text-2xl font-semibold">
+                Δεν φαίνεται να πληροίτε όλα τα κριτήρια
+              </h2>
+              <p>Δείτε παρακάτω ποια κριτήρια δεν πληρούνται.</p>
+            </div>
+          </div>
+        } @else if (r.verdict.assumedFailures.length > 0) {
+          <div class="bg-gold-mist text-gold-deep border-gold-deep flex gap-3 rounded-md border p-4">
+            <svg class="mt-1 h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" />
+            </svg>
+            <div class="flex flex-col gap-1">
+              <h2 id="result-title" tabindex="-1" class="font-display text-2xl font-semibold">
+                Φαίνεται κατάλληλος, με επιφυλάξεις
+              </h2>
+              <p>
+                Δεν πληρούνται κάποια κριτήρια που βασίζονται σε παραδοχές από το Σπίτι μου 2.
+                Δείτε παρακάτω ποια.
+              </p>
+            </div>
+          </div>
+        } @else {
+          <div class="bg-olive-mist text-olive border-olive flex gap-3 rounded-md border p-4">
+            <svg class="mt-1 h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21.801 10A10 10 0 1 1 17 3.335" /><path d="m9 11 3 3L22 4" />
+            </svg>
+            <div class="flex flex-col gap-1">
+              <h2 id="result-title" tabindex="-1" class="font-display text-2xl font-semibold">
+                Φαίνεται κατάλληλος
+              </h2>
+              <p>
+                Με βάση όσα έχουν ανακοινωθεί, δεν βρέθηκε κριτήριο που να αποκλείει την αίτησή
+                σας.
+              </p>
+            </div>
+          </div>
+        }
+
+        @if (r.verdict.reliesOnAssumptions) {
+          <app-notice kind="info">
+            <p>
+              Το αποτέλεσμα βασίζεται και σε παραδοχές από το Σπίτι μου 2, όπου το Σπίτι μου 3
+              δεν έχει ανακοινώσει όρους.
+            </p>
+          </app-notice>
+        }
+
+        <!-- Criteria -->
+        <div class="flex flex-col gap-3">
+          <h3 class="font-display text-2xl font-semibold">Κριτήρια που ελέγχθηκαν</h3>
+          <ul class="bg-surface-raised border-border divide-border divide-y rounded-lg border shadow-sm">
+            @for (c of r.criteria; track c.id) {
+              <li data-testid="criterion" class="flex flex-col gap-3 p-4 sm:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <span class="font-semibold">{{ c.label }}</span>
+                  <app-status-badge [status]="c.status" />
+                </div>
+                <p class="flex items-start gap-2 text-base">
+                  @if (c.outcome === 'met') {
+                    <svg class="text-olive mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M21.801 10A10 10 0 1 1 17 3.335" /><path d="m9 11 3 3L22 4" />
+                    </svg>
+                    <span><span class="text-olive font-semibold">Πληρούται.</span> {{ c.detail }}</span>
+                  } @else {
+                    <svg class="text-terracotta mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" />
+                    </svg>
+                    <span><span class="text-terracotta font-semibold">Δεν πληρούται.</span> {{ c.detail }}</span>
+                  }
+                </p>
+                @if (c.note) {
+                  <p class="text-ink-muted text-sm">{{ c.note }}</p>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- Unknown -->
+        <div class="flex flex-col gap-3">
+          <h3 class="font-display text-2xl font-semibold">Δεν έχουν ανακοινωθεί</h3>
+          <p class="text-ink-muted">
+            Αυτά τα στοιχεία δεν έχουν δημοσιευτεί ακόμη, γι' αυτό δεν αξιολογούνται.
+          </p>
+          <ul class="bg-surface-raised border-border divide-border divide-y rounded-lg border shadow-sm">
+            @for (u of r.unknown; track u.id) {
+              <li data-testid="unknown" class="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                <div class="flex flex-col gap-1">
+                  <span class="font-semibold">{{ u.label }}</span>
+                  <span class="text-ink-muted text-sm">{{ u.note }}</span>
+                </div>
+                <app-status-badge status="unknown" />
+              </li>
+            }
+          </ul>
+        </div>
+
+        <p class="text-sm">
+          Το αποτέλεσμα είναι ενδεικτικό και δεν αποτελεί δέσμευση. Τη δεσμευτική απόφαση
+          λαμβάνουν η τράπεζα και η επίσημη πλατφόρμα του προγράμματος.
+        </p>
+      </section>
+    }
+  </main>
+</div>

@@ -1,0 +1,55 @@
+@import "tailwindcss";
+@import "@fontsource/literata/latin-600.css";
+@import "@fontsource/literata/greek-600.css";
+@import "@fontsource/source-sans-3/latin-400.css";
+@import "@fontsource/source-sans-3/greek-400.css";
+@import "@fontsource/source-sans-3/latin-600.css";
+@import "@fontsource/source-sans-3/greek-600.css";
+@import "@fontsource/source-sans-3/latin-700.css";
+@import "@fontsource/source-sans-3/greek-700.css";
+
+/* Tokens from the Σπίτι μου 3 design system (tokens.json). */
+@theme {
+  --color-surface: #fbfaf6;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f0ede3;
+  --color-surface-tint: #e3eef7;
+  --color-ink: #10263f;
+  --color-ink-muted: #475569;
+  --color-border: #dad5c7;
+  --color-border-strong: #6b7889;
+  --color-aegean: #0d5eaf;
+  --color-aegean-deep: #0a3d73;
+  --color-on-aegean: #ffffff;
+  --color-olive: #44571a;
+  --color-olive-mist: #eaf0d8;
+  --color-terracotta: #a23b20;
+  --color-terracotta-mist: #fbe6dd;
+  --color-gold: #c8962e;
+  --color-gold-deep: #6b4700;
+  --color-gold-mist: #fbefd0;
+
+  --font-display: "Literata", Georgia, "Times New Roman", serif;
+  --font-sans: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+
+  --shadow-sm: 0 1px 2px rgb(16 38 63 / 0.08);
+  --shadow-md: 0 8px 24px rgb(16 38 63 / 0.12);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background-color: var(--color-surface);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+    }
+  }
+}
