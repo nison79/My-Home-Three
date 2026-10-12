@@ -11,7 +11,13 @@ const TONES: Record<Tone, string> = {
 @Component({
   selector: 'app-notice',
   template: `
-    <div class="flex gap-3 rounded-md border p-4" [class]="tone()" role="note">
+    <div
+      class="flex gap-3 rounded-md border p-4"
+      [class]="tone()"
+      [class.justify-center]="centered()"
+      [class.text-center]="centered()"
+      role="note"
+    >
       <svg
         class="mt-0.5 h-6 w-6 shrink-0"
         viewBox="0 0 24 24"
@@ -38,5 +44,7 @@ const TONES: Record<Tone, string> = {
 })
 export class Notice {
   readonly kind = input<Tone>('info');
+  /** Centers the icon and text, for banners that sit alone on the page. */
+  readonly centered = input(false);
   protected readonly tone = computed(() => TONES[this.kind()]);
 }

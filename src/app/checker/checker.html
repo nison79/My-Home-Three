@@ -3,7 +3,7 @@
     <legend class="sr-only">{{ title() }}</legend>
     @for (opt of options; track opt.value) {
       <label
-        class="group border-border-strong bg-surface-raised hover:bg-surface-tint has-[:checked]:border-aegean has-[:checked]:bg-surface-tint has-[:checked]:ring-aegean has-[:focus-visible]:outline-aegean flex cursor-pointer items-center gap-4 rounded-lg border p-5 text-lg transition-colors has-[:checked]:ring-2 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
+        class="group border-border-strong bg-surface-raised hover:bg-surface-tint has-[:checked]:border-aegean has-[:checked]:bg-surface-tint has-[:focus-visible]:outline-aegean flex cursor-pointer items-center gap-3 rounded-md border px-4 py-4 text-base transition-colors has-[:checked]:ring-1 has-[:checked]:ring-aegean has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 motion-reduce:transition-none"
         (click)="choose(field, opt.value, $event)"
       >
         <input
@@ -14,20 +14,13 @@
           [checked]="isChecked(field, opt.value)"
           (change)="set(field, opt.value)"
         />
-        <span class="grow">{{ opt.label }}</span>
-        <svg
-          class="text-aegean hidden h-6 w-6 shrink-0 group-has-[:checked]:block"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+        <span
+          class="border-border-strong group-has-[:checked]:border-aegean group-has-[:checked]:bg-aegean flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-surface-raised"
           aria-hidden="true"
         >
-          <path d="M21.801 10A10 10 0 1 1 17 3.335" />
-          <path d="m9 11 3 3L22 4" />
-        </svg>
+          <span class="hidden h-2 w-2 rounded-full bg-on-aegean group-has-[:checked]:block"></span>
+        </span>
+        <span class="grow">{{ opt.label }}</span>
       </label>
     }
     @if (errorOf(field); as error) {
@@ -41,244 +34,263 @@
   </fieldset>
 </ng-template>
 
-<div class="min-h-screen bg-surface text-ink">
+<div class="wizard-bg text-ink flex min-h-screen flex-col overflow-x-clip">
   <app-site-header />
 
-  <main class="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-12">
+  <main class="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 sm:py-12">
     @if (!isResult()) {
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center justify-between text-sm">
-          <span data-testid="progress" class="text-ink-muted font-semibold">
-            Βήμα {{ step() + 1 }} από {{ totalSteps }}
-          </span>
-          @if (step() === 0) {
+      <div #deck class="relative mx-auto mb-6 w-full max-w-[520px]" data-testid="card">
+        <!-- Two solid layers stacked behind the card. Their poses match STACK in checker.ts. -->
+        <div
+          aria-hidden="true"
+          data-decor
+          class="bg-surface-sunken border-border absolute inset-0 z-[2] rounded-lg border"
+          style="transform: translateY(28px) scale(0.93) rotate(2deg)"
+        ></div>
+        <div
+          aria-hidden="true"
+          data-decor
+          class="bg-surface border-border absolute inset-0 z-[3] rounded-lg border shadow-sm"
+          style="transform: translateY(14px) scale(0.965) rotate(-2.5deg)"
+        ></div>
+
+        <form
+          #card
+          class="bg-surface-raised border-border relative z-10 flex min-h-[540px] will-change-transform flex-col gap-6 rounded-lg border p-5 shadow-md sm:p-8"
+          novalidate
+          (submit)="next($event)"
+        >
+          <!-- Progress and close -->
+          <div class="flex items-center gap-4">
+            <div
+              role="progressbar"
+              aria-label="Πρόοδος ελέγχου"
+              aria-valuemin="1"
+              [attr.aria-valuemax]="totalSteps"
+              [attr.aria-valuenow]="step() + 1"
+              class="bg-surface-sunken h-2 grow overflow-hidden rounded-full"
+            >
+              <div
+                class="bg-aegean h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none"
+                [style.width.%]="((step() + 1) / totalSteps) * 100"
+              ></div>
+            </div>
             <a
               routerLink="/"
-              class="text-aegean focus-visible:outline-aegean underline focus-visible:outline-2 focus-visible:outline-offset-2"
-              >Αρχική</a
+              aria-label="Έξοδος από τον έλεγχο"
+              class="bg-surface-sunken text-ink hover:bg-surface-tint focus-visible:outline-aegean flex h-8 w-8 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
             >
-          } @else {
-            <button
-              type="button"
-              data-testid="back"
-              class="text-aegean focus-visible:outline-aegean underline focus-visible:outline-2 focus-visible:outline-offset-2"
-              (click)="back()"
-            >
-              Πίσω
-            </button>
-          }
-        </div>
-        <div
-          role="progressbar"
-          aria-label="Πρόοδος ελέγχου"
-          aria-valuemin="1"
-          [attr.aria-valuemax]="totalSteps"
-          [attr.aria-valuenow]="step() + 1"
-          class="bg-surface-sunken h-2 overflow-hidden rounded-full"
-        >
-          <div
-            class="bg-aegean h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none"
-            [style.width.%]="((step() + 1) / totalSteps) * 100"
-          ></div>
-        </div>
-      </div>
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+              </svg>
+            </a>
+          </div>
 
-      <form novalidate (submit)="next($event)">
-        <div
-          class="flex flex-col gap-6 motion-reduce:animate-none"
-          [class]="direction() === 'forward' ? 'animate-step-forward' : 'animate-step-back'"
-        >
-          <h1
-            id="step-title"
-            tabindex="-1"
-            class="font-display text-aegean-deep text-[28px] leading-9 font-semibold tracking-tight outline-none sm:text-[36px] sm:leading-[44px]"
-          >
-            {{ title() }}
-          </h1>
-
-          @switch (step()) {
-            @case (0) {
-              <app-notice kind="warning">
-                <p class="font-semibold">
-                  Το πρόγραμμα δεν έχει ξεκινήσει. Ο έλεγχος βασίζεται σε προκαταρκτικούς όρους.
-                </p>
-                <p class="text-xs">Οι όροι ελέγχθηκαν τελευταία στις {{ lastVerified }}.</p>
-              </app-notice>
-              <ng-container
-                *ngTemplateOutlet="choices; context: { field: 'householdType', options: householdOptions }"
-              />
-            }
-
-            @case (1) {
-              <div class="grid gap-6 sm:grid-cols-2">
-                <app-field
-                  controlId="ageA"
-                  [label]="householdType() === 'couple' ? 'Ηλικία πρώτου αιτούντος' : 'Ηλικία αιτούντος'"
-                  [error]="errors()['ageA']"
-                >
-                  <input
-                    id="ageA"
-                    data-autofocus
-                    type="text"
-                    inputmode="numeric"
-                    autocomplete="off"
-                    [class]="inputClass('ageA')"
-                    [value]="form().ageA"
-                    [attr.aria-invalid]="errors()['ageA'] ? 'true' : null"
-                    [attr.aria-describedby]="agesDescribedBy('ageA')"
-                    (input)="set('ageA', value($event))"
-                  />
-                </app-field>
-
-                @if (householdType() === 'couple') {
-                  <app-field
-                    controlId="ageB"
-                    label="Ηλικία δεύτερου αιτούντος"
-                    [error]="errors()['ageB']"
-                  >
-                    <input
-                      id="ageB"
-                      type="text"
-                      inputmode="numeric"
-                      autocomplete="off"
-                      [class]="inputClass('ageB')"
-                      [value]="form().ageB"
-                      [attr.aria-invalid]="errors()['ageB'] ? 'true' : null"
-                      [attr.aria-describedby]="agesDescribedBy('ageB')"
-                      (input)="set('ageB', value($event))"
-                    />
-                  </app-field>
-                }
-
-                @if (householdType() !== 'single') {
-                  <app-field
-                    controlId="children"
-                    label="Αριθμός παιδιών"
-                    [hint]="householdType() === 'couple' ? 'Γράψτε 0 αν δεν υπάρχουν.' : 'Τουλάχιστον ένα.'"
-                    [error]="errors()['children']"
-                  >
-                    <input
-                      id="children"
-                      type="text"
-                      inputmode="numeric"
-                      autocomplete="off"
-                      [class]="inputClass('children')"
-                      [value]="form().children"
-                      [attr.aria-invalid]="errors()['children'] ? 'true' : null"
-                      [attr.aria-describedby]="describedBy('children', true)"
-                      (input)="set('children', value($event))"
-                    />
-                  </app-field>
-                }
-              </div>
-              <p id="ages-hint" class="text-ink-muted text-sm">
-                Η ηλικία υπολογίζεται στις 31 Δεκεμβρίου του έτους της αίτησης.
+          <!-- Question -->
+          <div class="flex grow flex-col gap-5">
+            <div data-reveal class="flex flex-col gap-2">
+              <p data-testid="progress" class="text-ink-muted text-sm font-semibold">
+                Ερώτηση {{ step() + 1 }} από {{ totalSteps }}
               </p>
-            }
+              <h1
+                id="step-title"
+                tabindex="-1"
+                class="font-display text-aegean-deep text-2xl leading-8 font-semibold tracking-tight outline-none sm:text-[28px] sm:leading-9"
+              >
+                {{ title() }}
+              </h1>
+            </div>
 
-            @case (2) {
+            <div data-reveal class="flex flex-col gap-5">
+      @switch (step()) {
+        @case (0) {
+          <ng-container
+            *ngTemplateOutlet="choices; context: { field: 'householdType', options: householdOptions }"
+          />
+        }
+
+        @case (1) {
+          <div class="grid gap-6 sm:grid-cols-2">
+            <app-field
+              controlId="ageA"
+              [label]="householdType() === 'couple' ? 'Ηλικία πρώτου αιτούντος' : 'Ηλικία αιτούντος'"
+              [error]="errors()['ageA']"
+            >
+              <input
+                id="ageA"
+                data-autofocus
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                [class]="inputClass('ageA')"
+                [value]="form().ageA"
+                [attr.aria-invalid]="errors()['ageA'] ? 'true' : null"
+                [attr.aria-describedby]="agesDescribedBy('ageA')"
+                (input)="set('ageA', value($event))"
+              />
+            </app-field>
+
+            @if (householdType() === 'couple') {
               <app-field
-                controlId="income"
-                label="Ετήσιο οικογενειακό εισόδημα (€)"
-                hint="Συμπληρώστε το συνολικό ετήσιο οικογενειακό εισόδημα όπως εμφανίζεται στο εκκαθαριστικό σημείωμα."
-                [error]="errors()['income']"
+                controlId="ageB"
+                label="Ηλικία δεύτερου αιτούντος"
+                [error]="errors()['ageB']"
               >
                 <input
-                  id="income"
-                  data-autofocus
+                  id="ageB"
                   type="text"
-                  inputmode="decimal"
+                  inputmode="numeric"
                   autocomplete="off"
-                  [class]="inputClass('income')"
-                  [value]="form().income"
-                  [attr.aria-invalid]="errors()['income'] ? 'true' : null"
-                  [attr.aria-describedby]="describedBy('income', true)"
-                  (input)="set('income', value($event))"
+                  [class]="inputClass('ageB')"
+                  [value]="form().ageB"
+                  [attr.aria-invalid]="errors()['ageB'] ? 'true' : null"
+                  [attr.aria-describedby]="agesDescribedBy('ageB')"
+                  (input)="set('ageB', value($event))"
                 />
               </app-field>
             }
 
-            @case (3) {
-              <div class="grid gap-6 sm:grid-cols-2">
-                <app-field
-                  controlId="propertyValue"
-                  label="Συμβατική αξία (€)"
-                  hint="Η τιμή αγοράς που αναγράφεται στο συμβόλαιο."
-                  [error]="errors()['propertyValue']"
-                >
-                  <input
-                    id="propertyValue"
-                    data-autofocus
-                    type="text"
-                    inputmode="decimal"
-                    autocomplete="off"
-                    [class]="inputClass('propertyValue')"
-                    [value]="form().propertyValue"
-                    [attr.aria-invalid]="errors()['propertyValue'] ? 'true' : null"
-                    [attr.aria-describedby]="describedBy('propertyValue', true)"
-                    (input)="set('propertyValue', value($event))"
-                  />
-                </app-field>
-
-                <app-field
-                  controlId="area"
-                  label="Εμβαδόν (τ.μ.)"
-                  hint="Χωρίς βοηθητικούς χώρους."
-                  [error]="errors()['area']"
-                >
-                  <input
-                    id="area"
-                    type="text"
-                    inputmode="decimal"
-                    autocomplete="off"
-                    [class]="inputClass('area')"
-                    [value]="form().area"
-                    [attr.aria-invalid]="errors()['area'] ? 'true' : null"
-                    [attr.aria-describedby]="describedBy('area', true)"
-                    (input)="set('area', value($event))"
-                  />
-                </app-field>
-
-                <app-field controlId="buildingYear" label="Έτος κατασκευής" [error]="errors()['buildingYear']">
-                  <input
-                    id="buildingYear"
-                    type="text"
-                    inputmode="numeric"
-                    autocomplete="off"
-                    [class]="inputClass('buildingYear')"
-                    [value]="form().buildingYear"
-                    [attr.aria-invalid]="errors()['buildingYear'] ? 'true' : null"
-                    [attr.aria-describedby]="describedBy('buildingYear', false)"
-                    (input)="set('buildingYear', value($event))"
-                  />
-                </app-field>
-              </div>
+            @if (householdType() !== 'single') {
+              <app-field
+                controlId="children"
+                label="Αριθμός παιδιών"
+                [hint]="householdType() === 'couple' ? 'Γράψτε 0 αν δεν υπάρχουν.' : 'Τουλάχιστον ένα.'"
+                [error]="errors()['children']"
+              >
+                <input
+                  id="children"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  [class]="inputClass('children')"
+                  [value]="form().children"
+                  [attr.aria-invalid]="errors()['children'] ? 'true' : null"
+                  [attr.aria-describedby]="describedBy('children', true)"
+                  (input)="set('children', value($event))"
+                />
+              </app-field>
             }
+          </div>
+          <p id="ages-hint" class="text-ink-muted text-sm">
+            Η ηλικία υπολογίζεται στις 31 Δεκεμβρίου του έτους της αίτησης.
+          </p>
+        }
 
-            @case (4) {
-              <ng-container
-                *ngTemplateOutlet="choices; context: { field: 'residency', options: residencyOptions }"
+        @case (2) {
+          <app-field
+            controlId="income"
+            label="Ετήσιο οικογενειακό εισόδημα (€)"
+            hint="Συμπληρώστε το συνολικό ετήσιο οικογενειακό εισόδημα όπως εμφανίζεται στο εκκαθαριστικό σημείωμα."
+            [error]="errors()['income']"
+          >
+            <input
+              id="income"
+              data-autofocus
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              [class]="inputClass('income')"
+              [value]="form().income"
+              [attr.aria-invalid]="errors()['income'] ? 'true' : null"
+              [attr.aria-describedby]="describedBy('income', true)"
+              (input)="set('income', value($event))"
+            />
+          </app-field>
+        }
+
+        @case (3) {
+          <div class="grid gap-6 sm:grid-cols-2">
+            <app-field
+              controlId="propertyValue"
+              label="Συμβατική αξία (€)"
+              hint="Η τιμή αγοράς που αναγράφεται στο συμβόλαιο."
+              [error]="errors()['propertyValue']"
+            >
+              <input
+                id="propertyValue"
+                data-autofocus
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                [class]="inputClass('propertyValue')"
+                [value]="form().propertyValue"
+                [attr.aria-invalid]="errors()['propertyValue'] ? 'true' : null"
+                [attr.aria-describedby]="describedBy('propertyValue', true)"
+                (input)="set('propertyValue', value($event))"
               />
-            }
+            </app-field>
 
-            @case (5) {
-              <p class="text-ink-muted">Δηλώνεται από εσάς και δεν ελέγχεται.</p>
-              <ng-container
-                *ngTemplateOutlet="choices; context: { field: 'ownsSuitableHome', options: yesNoOptions }"
+            <app-field
+              controlId="area"
+              label="Εμβαδόν (τ.μ.)"
+              hint="Χωρίς βοηθητικούς χώρους."
+              [error]="errors()['area']"
+            >
+              <input
+                id="area"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                [class]="inputClass('area')"
+                [value]="form().area"
+                [attr.aria-invalid]="errors()['area'] ? 'true' : null"
+                [attr.aria-describedby]="describedBy('area', true)"
+                (input)="set('area', value($event))"
               />
-            }
-          }
+            </app-field>
 
-          <div class="flex flex-wrap items-center gap-4 pt-2">
+            <app-field controlId="buildingYear" label="Έτος κατασκευής" [error]="errors()['buildingYear']">
+              <input
+                id="buildingYear"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                [class]="inputClass('buildingYear')"
+                [value]="form().buildingYear"
+                [attr.aria-invalid]="errors()['buildingYear'] ? 'true' : null"
+                [attr.aria-describedby]="describedBy('buildingYear', false)"
+                (input)="set('buildingYear', value($event))"
+              />
+            </app-field>
+          </div>
+        }
+
+        @case (4) {
+          <ng-container
+            *ngTemplateOutlet="choices; context: { field: 'residency', options: residencyOptions }"
+          />
+        }
+
+        @case (5) {
+          <p class="text-ink-muted">Δηλώνεται από εσάς και δεν ελέγχεται.</p>
+          <ng-container
+            *ngTemplateOutlet="choices; context: { field: 'ownsSuitableHome', options: yesNoOptions }"
+          />
+        }
+      }
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              data-testid="back"
+              class="text-ink-muted hover:text-aegean-deep focus-visible:outline-aegean rounded-md px-4 py-3 text-base font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-muted"
+              [disabled]="step() === 0"
+              (click)="back()"
+            >
+              Πίσω
+            </button>
             <button
               type="submit"
-              class="bg-aegean text-on-aegean hover:bg-aegean-deep focus-visible:outline-aegean inline-flex items-center justify-center rounded-md px-6 py-3 text-lg font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+              class="bg-aegean text-on-aegean hover:bg-aegean-deep focus-visible:outline-aegean inline-flex items-center justify-center rounded-md px-6 py-3 text-base font-semibold shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               {{ step() === totalSteps - 1 ? 'Δείτε το αποτέλεσμα' : 'Συνέχεια' }}
             </button>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     }
 
     @if (isResult() && result(); as r) {
@@ -462,4 +474,15 @@
       </section>
     }
   </main>
+
+  @if (step() === 0) {
+    <div class="mx-auto w-full max-w-2xl px-4 pb-8 sm:px-6">
+      <app-notice kind="warning" [centered]="true">
+        <p class="font-semibold">
+          Το πρόγραμμα δεν έχει ξεκινήσει. Ο έλεγχος βασίζεται σε προκαταρκτικούς όρους.
+        </p>
+        <p class="text-xs">Οι όροι ελέγχθηκαν τελευταία στις {{ lastVerified }}.</p>
+      </app-notice>
+    </div>
+  }
 </div>

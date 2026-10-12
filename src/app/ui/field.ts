@@ -1,7 +1,8 @@
 import { Component, input } from '@angular/core';
 
 /**
- * Label, hint and error around a projected control. The control must have the
+ * Label, then the control, then its hint and error. The hint sits below the control so
+ * that controls in a row line up no matter how long or wrapped the hint is. The control must have the
  * same id as `controlId` and point `aria-describedby` at `{id}-hint` / `{id}-error`.
  */
 @Component({
@@ -9,10 +10,10 @@ import { Component, input } from '@angular/core';
   template: `
     <div class="flex flex-col gap-2">
       <label [attr.for]="controlId()" class="text-sm font-semibold text-ink">{{ label() }}</label>
+      <ng-content />
       @if (hint()) {
         <p [id]="controlId() + '-hint'" class="text-sm text-ink-muted">{{ hint() }}</p>
       }
-      <ng-content />
       @if (error()) {
         <p
           [id]="controlId() + '-error'"

@@ -5,6 +5,20 @@ import { Checker } from './checker';
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe('Checker', () => {
+  afterEach(() => {
+    delete (window as { matchMedia?: unknown }).matchMedia;
+  });
+
+  /** jsdom has no matchMedia; this lets a test choose whether motion is allowed. */
+  function allowMotion(reduce: boolean) {
+    (window as { matchMedia?: unknown }).matchMedia = (query: string) => ({
+      matches: reduce && query.includes('prefers-reduced-motion'),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    });
+  }
+
   async function render() {
     await TestBed.configureTestingModule({
       imports: [Checker],
@@ -72,8 +86,57 @@ describe('Checker', () => {
   it('starts on the first question with a progress label and no result', async () => {
     const { el, title, progress } = await render();
     expect(title()).toContain('οικογενειακή σας κατάσταση');
-    expect(progress()).toContain('Βήμα 1 από 6');
+    expect(progress()).toContain('Ερώτηση 1 από 6');
     expect(el.querySelector('[data-testid="result"]')).toBeNull();
+  });
+
+  it('shows the "not launched" warning at the bottom of the page, after the question', async () => {
+    const { el } = await render();
+    const note = el.querySelector('[role="note"]');
+    const form = el.querySelector('form');
+    expect(note?.textContent).toContain('δεν έχει ξεκινήσει');
+    expect(form && note && form.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows the warning on the first step only', async () => {
+    const { el, choose, next } = await render();
+    expect(el.querySelector('[role="note"]')).not.toBeNull();
+    await choose('householdType', 'single');
+    await next();
+    expect(el.querySelector('[role="note"]')).toBeNull();
+  });
+
+  it('has the question inside a card with a close button and a disabled back button on step 1', async () => {
+    const { el } = await render();
+    expect(el.querySelector('[data-testid="card"]')).not.toBeNull();
+    expect(el.querySelector('[data-testid="card"] a[aria-label="Έξοδος από τον έλεγχο"]')).not.toBeNull();
+    expect(el.querySelector<HTMLButtonElement>('[data-testid="back"]')?.disabled).toBe(true);
+  });
+
+  it('enables back from the second question', async () => {
+    const { el, choose, next } = await render();
+    await choose('householdType', 'single');
+    await next();
+    expect(el.querySelector<HTMLButtonElement>('[data-testid="back"]')?.disabled).toBe(false);
+  });
+
+  it('sends the current card under the stack when moving forward', async () => {
+    allowMotion(false);
+    const { el, choose, next } = await render();
+    await choose('householdType', 'single');
+    await next();
+    const ghost = el.querySelector('[data-testid="card"] [data-ghost]');
+    expect(ghost).not.toBeNull();
+    expect(ghost?.getAttribute('aria-hidden')).toBe('true');
+    expect(ghost?.querySelector('[id]')).toBeNull();
+  });
+
+  it('does not animate when the user prefers reduced motion', async () => {
+    allowMotion(true);
+    const { el, choose, next } = await render();
+    await choose('householdType', 'single');
+    await next();
+    expect(el.querySelector('[data-ghost]')).toBeNull();
   });
 
   it('shows one question at a time', async () => {
@@ -94,7 +157,7 @@ describe('Checker', () => {
     await choose('householdType', 'single');
     await next();
     expect(title()).toContain('ηλικία');
-    expect(progress()).toContain('Βήμα 2 από 6');
+    expect(progress()).toContain('Ερώτηση 2 από 6');
   });
 
   it('advances automatically after a pointer click on a choice', async () => {
@@ -138,7 +201,7 @@ describe('Checker', () => {
     await next();
     await type('ageA', '12');
     await next();
-    expect(progress()).toContain('Βήμα 2 από 6');
+    expect(progress()).toContain('Ερώτηση 2 από 6');
     expect(el.querySelectorAll('[data-testid="field-error"]')).toHaveLength(1);
   });
 

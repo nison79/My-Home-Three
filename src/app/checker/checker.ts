@@ -1,6 +1,17 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  Injector,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { gsap } from 'gsap';
 import { formatDateEl, formatEuro } from '../rules/format';
 import { SPITI_MOU_3_RULES } from '../rules/spiti-mou-3.rules';
 import { Field } from '../ui/field';
@@ -38,6 +49,22 @@ const RESULT = STEPS.length;
 const INPUT_BASE =
   'w-full rounded-md border bg-surface-raised px-4 py-3 text-lg text-ink tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aegean';
 
+/**
+ * Where each layer of the deck rests. The two back layers are drawn with these
+ * same poses in the template, so a card that lands on a slot is seamless.
+ */
+const STACK = {
+  top: { x: 0, y: 0, scale: 1, rotation: 0, backgroundColor: '#ffffff' },
+  second: { x: 0, y: 14, scale: 0.965, rotation: -2.5, backgroundColor: '#fbfaf6' },
+  third: { x: 0, y: 28, scale: 0.93, rotation: 2, backgroundColor: '#f0ede3' },
+};
+const SHADOW_REST = '0 8px 24px rgba(16, 38, 63, 0.12)';
+const SHADOW_LIFTED = '0 28px 56px rgba(16, 38, 63, 0.24)';
+const SHADOW_SLIGHT = '0 1px 2px rgba(16, 38, 63, 0.08)';
+/** A card further back is slightly out of focus, and sharpens as it comes forward. */
+const BLUR_BACK = 'blur(3px)';
+const BLUR_NONE = 'blur(0px)';
+
 /** Delay that lets the chosen card show before the next question slides in. */
 const AUTO_ADVANCE_MS = 180;
 
@@ -65,7 +92,14 @@ const YES_NO_OPTIONS = [
 })
 export class Checker {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
   private timer: ReturnType<typeof setTimeout> | undefined;
+
+  /** The stack wrapper and the card on top of it. Absent while the result shows. */
+  private readonly deck = viewChild<ElementRef<HTMLElement>>('deck');
+  private readonly card = viewChild<ElementRef<HTMLElement>>('card');
+  private timeline: gsap.core.Timeline | undefined;
+  private ghost: HTMLElement | undefined;
 
   protected readonly form = signal<RawAnswers>({ ...EMPTY });
   protected readonly step = signal(0);
@@ -160,7 +194,10 @@ export class Checker {
   });
 
   constructor() {
-    this.destroyRef.onDestroy(() => clearTimeout(this.timer));
+    this.destroyRef.onDestroy(() => {
+      clearTimeout(this.timer);
+      this.finishMotion();
+    });
   }
 
   protected set(field: FieldId, value: string): void {
@@ -256,9 +293,157 @@ export class Checker {
   }
 
   private go(step: number, direction: 'forward' | 'back'): void {
+    const from = this.step();
+    const animate = this.motionAllowed() && step !== from;
+    // The ghost must be copied before the step changes, while the old question is still on screen.
+    const ghost = animate ? this.prepareGhost(from, step) : null;
+
     this.direction.set(direction);
     this.step.set(step);
+
+    if (animate) {
+      afterNextRender(() => this.play(direction, step, ghost), { injector: this.injector });
+    }
     this.focusSoon();
+  }
+
+  private motionAllowed(): boolean {
+    return (
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
+  }
+
+  /**
+   * Copies the card as it is now, so it can leave while the real card already
+   * shows the next question. Returns null when there is no card to copy.
+   */
+  private prepareGhost(from: number, to: number): HTMLElement | null {
+    this.finishMotion();
+    const deck = this.deck()?.nativeElement;
+    const card = this.card()?.nativeElement;
+    if (!deck || !card || from === RESULT) return null;
+
+    const ghost = card.cloneNode(true) as HTMLElement;
+    // A copy must never take part in the page: no ids, no focus, no assistive tech.
+    ghost.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
+    const liveInputs = card.querySelectorAll('input');
+    ghost.querySelectorAll('input').forEach((input, i) => {
+      input.value = liveInputs[i].value;
+      input.checked = liveInputs[i].checked;
+      input.setAttribute('value', liveInputs[i].value);
+      if (liveInputs[i].checked) input.setAttribute('checked', '');
+    });
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.setAttribute('data-ghost', '');
+    ghost.setAttribute('inert', '');
+    ghost.removeAttribute('data-testid');
+
+    if (to === RESULT) {
+      // The card is about to be removed from the page, so the copy has to live outside it.
+      const r = card.getBoundingClientRect();
+      Object.assign(ghost.style, {
+        position: 'fixed',
+        left: `${r.left}px`,
+        top: `${r.top}px`,
+        width: `${r.width}px`,
+        height: `${r.height}px`,
+        margin: '0',
+        pointerEvents: 'none',
+        zIndex: '60',
+      });
+      document.body.appendChild(ghost);
+    } else {
+      Object.assign(ghost.style, {
+        position: 'absolute',
+        inset: '0',
+        width: '100%',
+        height: `${card.offsetHeight}px`,
+        margin: '0',
+        pointerEvents: 'none',
+        zIndex: '20',
+      });
+      deck.appendChild(ghost);
+    }
+    this.ghost = ghost;
+    return ghost;
+  }
+
+  /**
+   * Forward: the top card lifts off, goes to the back of the deck and stays
+   * solid, while the next card rises from the second slot.
+   * Back: the card at the back slides out and takes the top, and the one it
+   * replaces drops into the second slot.
+   */
+  private play(direction: 'forward' | 'back', step: number, ghost: HTMLElement | null): void {
+    const card = this.card()?.nativeElement;
+    const contents = Array.from(card?.children ?? []);
+    // The moving card must clear the stack completely before it changes layer,
+    // otherwise the overlapping area flips in a single frame and flashes.
+    const exit = (this.deck()?.nativeElement.offsetWidth ?? 520) * 1.16;
+    const tl = gsap.timeline({ defaults: { force3D: true }, onComplete: () => this.finishMotion() });
+    this.timeline = tl;
+
+    if (direction === 'forward') {
+      if (ghost && step === RESULT) {
+        tl.to(ghost, {
+          y: -24,
+          rotation: 3,
+          scale: 1.02,
+          boxShadow: SHADOW_LIFTED,
+          duration: 0.25,
+          ease: 'power2.out',
+        }).to(ghost, { y: -64, opacity: 0, duration: 0.3, ease: 'power2.in' });
+        return;
+      }
+
+      if (ghost) {
+        gsap.set(ghost, { zIndex: 20 });
+        tl.to(ghost, { x: exit, y: -16, rotation: 5, boxShadow: SHADOW_LIFTED, duration: 0.32, ease: 'power2.out' }, 0)
+          .set(ghost, { zIndex: 1 }, 0.32)
+          .to(ghost, { ...STACK.third, boxShadow: 'none', duration: 0.46, ease: 'power3.inOut' }, 0.32)
+          .to(Array.from(ghost.children), { filter: BLUR_BACK, duration: 0.46, ease: 'power2.inOut' }, 0.32);
+      }
+      if (card) {
+        gsap.set(card, { ...STACK.second, boxShadow: SHADOW_SLIGHT });
+        tl.to(card, { ...STACK.top, boxShadow: SHADOW_REST, duration: 0.5, ease: 'power3.out' }, 0.2);
+        // Content is visible from the start, just soft, and comes into focus on arrival.
+        gsap.set(contents, { filter: BLUR_BACK });
+        tl.to(contents, { filter: BLUR_NONE, duration: 0.5, ease: 'power2.out' }, 0.2);
+      }
+      return;
+    }
+
+    // Back
+    if (ghost) {
+      gsap.set(ghost, { zIndex: 5 });
+      tl.to(ghost, { ...STACK.second, boxShadow: SHADOW_SLIGHT, duration: 0.45, ease: 'power3.inOut' }, 0)
+        .to(Array.from(ghost.children), { filter: 'blur(1.5px)', duration: 0.45, ease: 'power2.inOut' }, 0);
+    }
+    if (card) {
+      gsap.set(card, { ...STACK.third, zIndex: 1, boxShadow: 'none' });
+      tl.to(card, { x: -exit, y: -16, rotation: -5, boxShadow: SHADOW_LIFTED, duration: 0.32, ease: 'power2.out' }, 0)
+        .set(card, { zIndex: 10 }, 0.32)
+        .to(card, { ...STACK.top, boxShadow: SHADOW_REST, duration: 0.46, ease: 'power3.out' }, 0.32);
+      // The previous answers are visible while the card comes out, just soft.
+      gsap.set(contents, { filter: BLUR_BACK });
+      tl.to(contents, { filter: BLUR_NONE, duration: 0.55, ease: 'power2.out' }, 0.2);
+    }
+  }
+
+  /** Stops any running motion and leaves the DOM exactly as Angular rendered it. */
+  private finishMotion(): void {
+    this.timeline?.kill();
+    this.timeline = undefined;
+    this.ghost?.remove();
+    this.ghost = undefined;
+    const card = this.card()?.nativeElement;
+    if (card) {
+      gsap.set(card, { clearProps: 'transform,opacity,zIndex,backgroundColor,boxShadow' });
+      gsap.set(Array.from(card.children), { clearProps: 'filter' });
+      gsap.set(card.querySelectorAll('[data-reveal]'), { clearProps: 'opacity,transform' });
+    }
   }
 
   /** Moves focus to the first invalid or first text input, else to the question. */
@@ -269,7 +454,7 @@ export class Checker {
         invalid ??
         document.querySelector<HTMLElement>('[data-autofocus]') ??
         document.getElementById('step-title');
-      target?.focus();
+      target?.focus({ preventScroll: true });
     }, 0);
   }
 }

@@ -78,3 +78,11 @@
     }
   }
 }
+
+/* Soft backdrop behind the stepped checker: sea mist at the top left, olive mist at the bottom right. */
+.wizard-bg {
+  background-color: var(--color-surface);
+  background-image:
+    radial-gradient(60rem 36rem at 8% -10%, var(--color-surface-tint), transparent 65%),
+    radial-gradient(50rem 34rem at 100% 105%, var(--color-olive-mist), transparent 60%);
+}
