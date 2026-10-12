@@ -20,9 +20,14 @@ describe('App routing', () => {
     expect(el.querySelector('h1')?.textContent).toContain('φαίνεστε κατάλληλοι');
   });
 
-  it('shows the checker placeholder at /elegxos', async () => {
+  it('shows the first checker question at /elegxos', async () => {
     const el = await render('/elegxos');
-    expect(el.querySelector('h1')?.textContent).toContain('Έλεγχος επιλεξιμότητας');
+    expect(el.querySelector('h1')?.textContent).toContain('οικογενειακή σας κατάσταση');
+  });
+
+  it('shows the calculator at /ypologismos', async () => {
+    const el = await render('/ypologismos');
+    expect(el.querySelector('h1')?.textContent).toContain('Εκτίμηση δανείου');
   });
 
   it('sends unknown paths to the landing page', async () => {

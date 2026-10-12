@@ -1,0 +1,275 @@
+<div class="min-h-screen bg-surface text-ink">
+  <app-site-header />
+
+  <main class="mx-auto flex max-w-[1120px] flex-col gap-8 px-4 py-8 sm:px-6 sm:py-12">
+    <div class="flex max-w-3xl flex-col gap-4">
+      <h1
+        class="font-display text-aegean-deep text-[32px] leading-10 font-semibold tracking-tight sm:text-[44px] sm:leading-[50px]"
+      >
+        Εκτίμηση δανείου
+      </h1>
+      <p class="text-ink-muted text-lg">
+        Αλλάξτε τα στοιχεία και δείτε αμέσως το δάνειο, την ίδια συμμετοχή και τη μηνιαία δόση.
+        Οι απαντήσεις σας δεν αποθηκεύονται και δεν φεύγουν από τη συσκευή σας.
+      </p>
+      <app-notice kind="warning">
+        <p class="font-semibold">
+          Το πρόγραμμα δεν έχει ξεκινήσει. Διάρκεια και επιτόκιο δεν έχουν ανακοινωθεί και
+          βασίζονται στο Σπίτι μου 2.
+        </p>
+        <p class="text-xs">Οι όροι ελέγχθηκαν τελευταία στις {{ lastVerified }}.</p>
+      </app-notice>
+    </div>
+
+    <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <!-- Inputs -->
+      <form
+        class="bg-surface-raised border-border flex flex-col gap-6 rounded-lg border p-6 shadow-sm"
+        novalidate
+        (submit)="submit($event)"
+      >
+        <app-field
+          controlId="propertyValue"
+          label="Συμβατική αξία ακινήτου (€)"
+          [hint]="'Η τιμή αγοράς που αναγράφεται στο συμβόλαιο. Ανώτατο όριο: ' + maxValue + '.'"
+          [error]="errors()['propertyValue']"
+        >
+          <input
+            id="propertyValue"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            [class]="inputClass('propertyValue')"
+            [value]="form().propertyValue"
+            [attr.aria-invalid]="errors()['propertyValue'] ? 'true' : null"
+            [attr.aria-describedby]="describedBy('propertyValue')"
+            (input)="set('propertyValue', value($event))"
+            (blur)="touch('propertyValue')"
+          />
+        </app-field>
+
+        <div class="flex flex-col gap-2">
+          <label for="termYears" class="text-ink text-sm font-semibold">
+            Διάρκεια δανείου:
+            <span class="text-aegean-deep tabular-nums">{{ termLabel() }}</span>
+          </label>
+          <input
+            id="termYears"
+            type="range"
+            step="1"
+            class="accent-aegean focus-visible:outline-aegean h-2 w-full cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4"
+            [min]="termRange.min"
+            [max]="termRange.max"
+            [value]="form().termYears"
+            aria-describedby="termYears-hint"
+            (input)="set('termYears', value($event))"
+          />
+          <p id="termYears-hint" class="text-ink-muted flex justify-between text-sm tabular-nums">
+            <span>{{ termRange.min }} έτη</span>
+            <span>{{ termRange.max }} έτη</span>
+          </p>
+        </div>
+
+        <app-field
+          controlId="bankRate"
+          label="Επιτόκιο τραπεζικού τμήματος (% ετησίως)"
+          [hint]="'Προεπιλογή: Euribor 3 μηνών ' + euribor + ' (' + euriborDate + ') + ' + margin + ' = ' + defaultRate + '.'"
+          [error]="errors()['bankRate']"
+        >
+          <input
+            id="bankRate"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            [class]="inputClass('bankRate')"
+            [value]="form().bankRate"
+            [attr.aria-invalid]="errors()['bankRate'] ? 'true' : null"
+            [attr.aria-describedby]="describedBy('bankRate')"
+            (input)="set('bankRate', value($event))"
+            (blur)="touch('bankRate')"
+          />
+        </app-field>
+
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+          <app-status-badge status="assumed" />
+          <span>
+            Η διάρκεια και το επιτόκιο είναι παραδοχές από το Σπίτι μου 2. Πηγή Euribor:
+            <a
+              class="text-aegean focus-visible:outline-aegean underline focus-visible:outline-2 focus-visible:outline-offset-2"
+              [href]="euriborSource.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              >{{ euriborSource.label }}</a
+            >.
+          </span>
+        </div>
+
+        <div>
+          <button
+            type="button"
+            class="bg-surface-raised text-aegean-deep border-aegean hover:bg-surface-tint focus-visible:outline-aegean inline-flex items-center justify-center rounded-md border px-5 py-3 text-base font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            (click)="reset()"
+          >
+            Επαναφορά
+          </button>
+        </div>
+      </form>
+
+      <!-- Live summary: sticky next to the form on wide screens -->
+      <div class="lg:sticky lg:top-6" aria-live="polite">
+        @if (result(); as r) {
+          @if (r.kind === 'above-max-value') {
+            <app-notice kind="warning">
+              <p class="font-semibold">
+                Η αξία του ακινήτου ξεπερνά το ανώτατο όριο του προγράμματος ({{ euro(r.max) }}),
+                γι' αυτό δεν γίνεται εκτίμηση.
+              </p>
+            </app-notice>
+          } @else {
+            <section
+              data-testid="result"
+              class="bg-surface-raised border-border flex flex-col gap-4 rounded-lg border p-6 shadow-md"
+              aria-labelledby="result-title"
+            >
+              <h2 id="result-title" class="text-ink-muted text-sm font-semibold">
+                Εκτιμώμενη μηνιαία δόση
+              </h2>
+              <p class="text-aegean-deep text-5xl font-bold tabular-nums">
+                {{ euro(r.monthlyTotal, true) }}
+              </p>
+              <p class="text-ink-muted text-sm tabular-nums">
+                για {{ years(r.months) }} ({{ r.months }} δόσεις)
+              </p>
+              <dl class="border-border divide-border divide-y border-t">
+                <div class="flex flex-col gap-1 py-3">
+                  <div class="flex items-baseline justify-between gap-4">
+                    <dt class="flex flex-wrap items-center gap-2">
+                      Ποσό δανείου <app-status-badge status="reported" />
+                    </dt>
+                    <dd class="font-bold tabular-nums">{{ euro(r.loan) }}</dd>
+                  </div>
+                  <dd class="text-ink-muted text-sm">
+                    @if (r.cappedByMaxLoan) {
+                      Περιορίζεται από το ανώτατο όριο των {{ maxLoan }}, γι' αυτό η ίδια
+                      συμμετοχή ξεπερνά το 10 % της αξίας.
+                    } @else {
+                      Έως {{ financingPct }} % της αξίας του ακινήτου.
+                    }
+                  </dd>
+                </div>
+                <div class="flex flex-col gap-1 py-3">
+                  <div class="flex items-baseline justify-between gap-4">
+                    <dt>Ίδια συμμετοχή</dt>
+                    <dd class="font-bold tabular-nums">{{ euro(r.ownFunds) }}</dd>
+                  </div>
+                  <dd class="text-ink-muted text-sm">Δεν περιλαμβάνει φόρους, έξοδα και αμοιβές.</dd>
+                </div>
+              </dl>
+              <p class="text-ink-muted text-xs">
+                Όλα τα ποσά είναι εκτίμηση και δεν αποτελούν δέσμευση.
+              </p>
+            </section>
+          }
+        } @else {
+          <div class="bg-surface-sunken border-border rounded-lg border p-6">
+            <p class="text-ink-muted">
+              Συμπληρώστε την αξία του ακινήτου για να δείτε την εκτίμηση.
+            </p>
+          </div>
+        }
+      </div>
+
+      <!-- Breakdown -->
+      @if (result(); as r) {
+        @if (r.kind === 'estimate') {
+          <div class="flex flex-col gap-6 lg:col-start-1">
+            @if (r.belowMinimumLoan) {
+              <app-notice kind="warning">
+                <p>
+                  Το δάνειο είναι μικρότερο από το κατώτατο ποσό των {{ minLoan }} που ίσχυε στο
+                  Σπίτι μου 2 (παραδοχή).
+                </p>
+              </app-notice>
+            }
+
+            <div class="bg-surface-raised border-border rounded-lg border shadow-sm">
+              <dl class="divide-border divide-y">
+                <div class="flex flex-col gap-1 p-4 sm:p-6">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <dt class="font-semibold">Άτοκο τμήμα</dt>
+                    <app-status-badge status="reported" />
+                  </div>
+                  <dd class="text-xl font-bold tabular-nums">{{ euro(r.interestFreePart) }}</dd>
+                  <dd class="text-ink-muted text-sm tabular-nums">
+                    Δόση {{ euro(r.monthlyInterestFree, true) }} ανά μήνα, χωρίς τόκο.
+                  </dd>
+                </div>
+
+                <div class="flex flex-col gap-1 p-4 sm:p-6">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <dt class="font-semibold">Τραπεζικό τμήμα</dt>
+                    <app-status-badge status="assumed" />
+                  </div>
+                  <dd class="text-xl font-bold tabular-nums">{{ euro(r.bankPart) }}</dd>
+                  <dd class="text-ink-muted text-sm tabular-nums">
+                    Δόση {{ euro(r.monthlyBank, true) }} ανά μήνα.
+                  </dd>
+                </div>
+
+                <div class="flex flex-col gap-1 p-4 sm:p-6">
+                  <dt class="font-semibold">Συνολικοί τόκοι</dt>
+                  <dd class="text-xl font-bold tabular-nums">{{ euro(r.totalInterest) }}</dd>
+                </div>
+
+                <div class="flex flex-col gap-1 p-4 sm:p-6">
+                  <dt class="font-semibold">Συνολικό ποσό αποπληρωμής</dt>
+                  <dd class="text-xl font-bold tabular-nums">{{ euro(r.totalRepaid) }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <h2 class="font-display text-2xl font-semibold">Τι δεν έχει ληφθεί υπόψη</h2>
+              <ul class="bg-surface-raised border-border divide-border divide-y rounded-lg border shadow-sm">
+                <li class="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                  <span>
+                    Η επιδότηση τόκων που ίσχυε στο Σπίτι μου 2 για οικογένειες με τρία παιδιά
+                    και άνω δεν έχει ανακοινωθεί για το Σπίτι μου 3, γι' αυτό δεν εφαρμόζεται.
+                  </span>
+                  <app-status-badge status="unknown" />
+                </li>
+                <li class="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                  <span>
+                    Το άτοκο τμήμα εξοφλείται μέσα στην ίδια διάρκεια, χωρίς τόκο, όπως στο
+                    Σπίτι μου 2.
+                  </span>
+                  <app-status-badge status="assumed" />
+                </li>
+                <li class="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                  <span>
+                    Το πραγματικό επιτόκιο θα το ορίσει η τράπεζα και θα διαφέρει από την
+                    παραδοχή.
+                  </span>
+                  <app-status-badge status="assumed" />
+                </li>
+              </ul>
+            </div>
+
+            <p class="text-sm">
+              Όλα τα ποσά είναι εκτίμηση και δεν αποτελούν δέσμευση. Τα πραγματικά ποσά θα τα
+              ορίσει η τράπεζα.
+            </p>
+          </div>
+        }
+      }
+    </div>
+
+    <div>
+      <a
+        routerLink="/elegxos"
+        class="text-aegean focus-visible:outline-aegean underline focus-visible:outline-2 focus-visible:outline-offset-2"
+        >Ελέγξτε αν πληροίτε τα κριτήρια</a
+      >
+    </div>
+  </main>
+</div>

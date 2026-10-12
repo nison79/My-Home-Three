@@ -11,5 +11,10 @@ export const routes: Routes = [
     title: 'Έλεγχος επιλεξιμότητας | Σπίτι μου 3',
     loadComponent: () => import('./checker/checker').then((m) => m.Checker),
   },
+  {
+    path: 'ypologismos',
+    title: 'Εκτίμηση δανείου | Σπίτι μου 3',
+    loadComponent: () => import('./calculator/calculator').then((m) => m.Calculator),
+  },
   { path: '**', redirectTo: '' },
 ];

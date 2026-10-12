@@ -38,6 +38,31 @@
 
   --shadow-sm: 0 1px 2px rgb(16 38 63 / 0.08);
   --shadow-md: 0 8px 24px rgb(16 38 63 / 0.12);
+
+  --animate-step-forward: step-forward 220ms ease-out;
+  --animate-step-back: step-back 220ms ease-out;
+
+  @keyframes step-forward {
+    from {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes step-back {
+    from {
+      opacity: 0;
+      transform: translateX(-24px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 @layer base {

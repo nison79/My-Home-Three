@@ -1,10 +1,5 @@
 <div class="min-h-screen bg-surface text-ink">
-  <header class="border-b border-border bg-surface-raised">
-    <div class="mx-auto flex max-w-[1120px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
-      <span class="font-display text-2xl font-semibold text-aegean-deep">Σπίτι μου 3</span>
-      <span class="text-sm text-ink-muted">Ανεπίσημος οδηγός</span>
-    </div>
-  </header>
+  <app-site-header />
 
   <main class="mx-auto flex max-w-[1120px] flex-col gap-12 px-4 py-8 sm:px-6 sm:py-12">
     <section class="flex max-w-3xl flex-col gap-6" aria-labelledby="hero-title">
@@ -24,11 +19,16 @@
         </p>
         <p class="text-xs">Οι όροι ελέγχθηκαν τελευταία στις {{ lastVerified }}.</p>
       </app-notice>
-      <div>
+      <div class="flex flex-wrap items-center gap-4">
         <a
           routerLink="/elegxos"
           class="bg-aegean text-on-aegean hover:bg-aegean-deep focus-visible:outline-aegean inline-flex items-center justify-center rounded-md px-5 py-3 text-base font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           >Έλεγχος επιλεξιμότητας</a
+        >
+        <a
+          routerLink="/ypologismos"
+          class="bg-surface-raised text-aegean-deep border-aegean hover:bg-surface-tint focus-visible:outline-aegean inline-flex items-center justify-center rounded-md border px-5 py-3 text-base font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          >Εκτίμηση δανείου</a
         >
       </div>
     </section>

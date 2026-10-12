@@ -11,7 +11,7 @@ export interface KeyFigure {
 
 /** Figures shown on the landing page: only criteria reported for Σπίτι μου 3. */
 export function keyFigures(rules: Spiti3Rules): KeyFigure[] {
-  const { age, incomeCaps, maxPropertyValue, maxLoan, maxFinancingShare } = rules;
+  const { age, incomeCaps, maxPropertyValue, maxLoan, maxFinancingShare, interestFreeShare } = rules;
   const caps = incomeCaps.value;
 
   const all: KeyFigure[] = [
@@ -63,6 +63,13 @@ export function keyFigures(rules: Spiti3Rules): KeyFigure[] {
       value: `έως ${Math.round(maxFinancingShare.value * 100)} % της αξίας`,
       status: maxFinancingShare.status,
       source: maxFinancingShare.source,
+    },
+    {
+      id: 'interestFreeShare',
+      label: 'Διάρθρωση δανείου',
+      value: `${Math.round(interestFreeShare.value * 100)} % άτοκο (κρατική χρηματοδότηση), ${Math.round((1 - interestFreeShare.value) * 100)} % τραπεζικό`,
+      status: interestFreeShare.status,
+      source: interestFreeShare.source,
     },
   ];
 

@@ -37,6 +37,18 @@ export interface Spiti3Rules {
   maxLoan: RuleValue<number>;
   /** Maximum share of the contract value that can be financed (0–1). */
   maxFinancingShare: RuleValue<number>;
+  /** Share of the loan that is State-funded and interest-free (0–1); the rest is a bank loan. */
+  interestFreeShare: RuleValue<number>;
+  minimumLoan: RuleValue<number>;
+  loanTermYears: RuleValue<{ min: number; max: number; default: number }>;
+  /** Bank-half rate basis: 3M Euribor plus a fixed margin, both in percent. */
+  bankRate: RuleValue<{
+    euribor3m: number;
+    /** ISO date the Euribor value applies to. */
+    euribor3mAsOf: string;
+    euribor3mSource: RuleSource;
+    margin: number;
+  }>;
   /** Base maximum area; raised by `extraSqmPerChild` for each child beyond `afterChildren`. */
   maxArea: RuleValue<{ sqm: number; afterChildren: number; extraSqmPerChild: number }>;
   /** Latest building year allowed (the programme says "built by 31/12 of this year"). */

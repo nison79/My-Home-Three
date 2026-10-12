@@ -4,11 +4,12 @@ import { formatDateEl } from '../rules/format';
 import { keyFigures } from '../rules/key-figures';
 import { SPITI_MOU_3_RULES } from '../rules/spiti-mou-3.rules';
 import { Notice } from '../ui/notice';
+import { SiteHeader } from '../ui/site-header';
 import { StatusBadge } from '../ui/status-badge';
 
 @Component({
   selector: 'app-landing',
-  imports: [RouterLink, Notice, StatusBadge],
+  imports: [RouterLink, Notice, SiteHeader, StatusBadge],
   templateUrl: './landing.html',
 })
 export class Landing {
